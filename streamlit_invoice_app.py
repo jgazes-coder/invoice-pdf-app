@@ -54,11 +54,9 @@ if uploaded_file:
             safe_name = customer_name.replace(" ", "_").replace("/", "-")
             pdf_filename = f"{doc_type}_{safe_name}.pdf"
 
-            pdf_output = io.BytesIO()
-            pdf.output(pdf_output)
-            pdf_output.seek(0)
+            pdf_str = pdf.output(dest='S').encode('latin1')
+zip_file.writestr(pdf_filename, pdf_str)
 
-            zip_file.writestr(pdf_filename, pdf_output.read())
 
     zip_buffer.seek(0)
     st.download_button(
