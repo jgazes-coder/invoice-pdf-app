@@ -46,16 +46,16 @@ if uploaded_file:
     zip_buffer = io.BytesIO()
 
     with ZipFile(zip_buffer, 'w') as zip_file:
-        for index, row in df.iterrows():
-            doc_type = row.get("BQ", "Invoice")
-            pdf = create_pdf(row, doc_type)
+    for index, row in df.iterrows():
+        doc_type = row.get("BQ", "Invoice")
+        pdf = create_pdf(row, doc_type)
 
-            customer_name = row.get("Contact Name", f"customer_{index}")
-            safe_name = customer_name.replace(" ", "_").replace("/", "-")
-            pdf_filename = f"{doc_type}_{safe_name}.pdf"
+        customer_name = row.get("Contact Name", f"customer_{index}")
+        safe_name = customer_name.replace(" ", "_").replace("/", "-")
+        pdf_filename = f"{doc_type}_{safe_name}.pdf"
 
-            pdf_str = pdf.output(dest='S').encode('latin1')
-zip_file.writestr(pdf_filename, pdf_str)
+        pdf_str = pdf.output(dest='S').encode('latin1')  # ✅ This is the correct line
+        zip_file.writestr(pdf_filename, pdf_str)
 
 
 zip_buffer.seek(0)
