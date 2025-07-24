@@ -22,18 +22,18 @@ def create_pdf(row, doc_type):
     pdf.ln(10)
 
     pdf.set_font("Arial", size=11)
-    pdf.cell(100, 8, f"Contact Name: {row.get('Contact Name', '')}", ln=0)
-    pdf.cell(90, 8, f"Sub Ref: {row.get('Sub Ref Number', '')}", ln=1)
-    pdf.cell(100, 8, f"Ship To: {row.get('Ship To Address', '')}", ln=0)
-    pdf.cell(90, 8, f"Mail To: {row.get('Mail To Address', '')}", ln=1)
-    pdf.cell(100, 8, f"Expire Date: {row.get('Expire Date', '')}", ln=1)
+    pdf.cell(100, 8, f"Contact Name: {str(row['Contact Name'])}", ln=0)
+    pdf.cell(90, 8, f"Sub Ref: {str(row['Sub Ref Number'])}", ln=1)
+    pdf.cell(100, 8, f"Ship To: {str(row['Ship To Address'])}", ln=0)
+    pdf.cell(90, 8, f"Mail To: {str(row['Mail To Address'])}", ln=1)
+    pdf.cell(100, 8, f"Expire Date: {str(row['Expire Date'])}", ln=1)
 
     pdf.ln(10)
     pdf.set_font("Arial", "B", 12)
     pdf.cell(0, 8, "Billing Details", ln=1)
 
     pdf.set_font("Arial", size=11)
-    pdf.cell(0, 8, f"Product: {row.get('Product', 'N/A')} - ${row.get('Amount', '0.00')}", ln=1)
+    pdf.cell(0, 8, f"Product: {str(row.get('Product', 'N/A'))} - ${str(row.get('Amount', '0.00'))}", ln=1)
     pdf.cell(0, 8, f"Status: {doc_type}", ln=1)
     pdf.ln(5)
     pdf.cell(0, 8, f"Generated On: {datetime.now().strftime('%Y-%m-%d')}", ln=1)
@@ -43,14 +43,18 @@ def create_pdf(row, doc_type):
 if uploaded_file:
     st.success("✅ File uploaded. Generating PDFs...")
     df = pd.read_excel(uploaded_file)
+
+    # Normalize column names
+    df.columns = df.columns.str.strip()
+
     zip_buffer = io.BytesIO()
 
     with ZipFile(zip_buffer, 'w') as zip_file:
         for index, row in df.iterrows():
-            doc_type = row.get("BQ", "Invoice")
+            doc_type = str(row.get("BQ", "Invoice"))
             pdf = create_pdf(row, doc_type)
 
-            customer_name = row.get("Contact Name", f"customer_{index}")
+            customer_name = str(row.get("Contact Name", f"customer_{index}")).strip()
             safe_name = customer_name.replace(" ", "_").replace("/", "-")
             pdf_filename = f"{doc_type}_{safe_name}.pdf"
 
