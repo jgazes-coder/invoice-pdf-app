@@ -58,7 +58,7 @@ if uploaded_file:
 zip_file.writestr(pdf_filename, pdf_str)
 
 
-    zip_buffer.seek(0)
+zip_buffer.seek(0)
     st.download_button(
         label="📥 Download ZIP of PDFs",
         data=zip_buffer,
