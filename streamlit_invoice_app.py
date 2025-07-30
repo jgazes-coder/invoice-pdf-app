@@ -97,7 +97,7 @@ def create_invoice(row, logo_path=None):
     # Data Row
     pdf.set_font('Arial', '', 12)
     # Convert Excel date to proper format
-    order_date = datetime.fromordinal(datetime(1900, 1, 1).toordinal() + int(row['Order_date']) - 2
+    order_date = datetime.fromordinal(datetime(1900, 1, 1).toordinal() + int(row['Order_date'])) - 2
     formatted_order_date = order_date.strftime('%m/%d/%Y')
     
     pdf.cell(col_widths[0], 10, str(row['Customer_Account_Number']), 1, 0, 'C')
