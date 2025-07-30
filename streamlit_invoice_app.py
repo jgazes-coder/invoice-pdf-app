@@ -72,31 +72,49 @@ def create_invoice(row, logo_path=None):
     city_state_zip_ship = f"{row['Ship_to_City']} {row['Ship_to_State']} {row['Ship_to_Zip']}"
     pdf.cell(95, 6, city_state_zip_bill, 0, 0, 'L')
     pdf.cell(95, 6, city_state_zip_ship, 0, 0, 'L')
-    pdf.cell(0, 6, "", 0, 1)
     
-    # Customer Account (Roman instead of Bold)
+    # Promo and Sales Codes (third column)
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 6, f"PROMO: {row['Curr_Promo_Code']}", 0, 1, 'L')
+    pdf.cell(95, 6, "", 0, 0)  # Empty first column
+    pdf.cell(95, 6, "", 0, 0)  # Empty second column
+    pdf.cell(0, 6, f"SALES: {row['SalesCode']}", 0, 1, 'L')
+    pdf.ln(5)  # Line space before next section
+    
+    # 6-column table
+    col_widths = [30, 25, 40, 25, 30, 30]  # Adjust as needed
+    
+    # Header Row
+    pdf.set_fill_color(230, 230, 230)  # 20% gray
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(col_widths[0], 10, "Cust. Acct. #", 1, 0, 'C', fill=True)
+    pdf.cell(col_widths[1], 10, "Order #", 1, 0, 'C', fill=True)
+    pdf.cell(col_widths[2], 10, "Purchase Order", 1, 0, 'C', fill=True)
+    pdf.cell(col_widths[3], 10, "Term", 1, 0, 'C', fill=True)
+    pdf.cell(col_widths[4], 10, "Order Date", 1, 0, 'C', fill=True)
+    pdf.cell(col_widths[5], 10, "Due Date", 1, 1, 'C', fill=True)
+    
+    # Data Row
     pdf.set_font('Arial', '', 12)
-    pdf.cell(95, 6, f"Account #: {row['Customer_Account_Number']}", 0, 1, 'L')
+    # Convert Excel date to proper format
+    order_date = datetime.fromordinal(datetime(1900, 1, 1).toordinal() + int(row['Order_date']) - 2
+    formatted_order_date = order_date.strftime('%m/%d/%Y')
     
-    # Rest of your existing invoice content...
-    # Date and Invoice Number
-    invoice_date = datetime.now().strftime('%B %d, %Y')
-    pdf.set_font('Arial', '', 10)
-    pdf.cell(0, 8, invoice_date, 0, 1, 'R')
+    pdf.cell(col_widths[0], 10, str(row['Customer_Account_Number']), 1, 0, 'C')
+    pdf.cell(col_widths[1], 10, str(row['Order']), 1, 0, 'C')
+    pdf.cell(col_widths[2], 10, str(row['PO_Num']) if pd.notna(row['PO_Num']) else "", 1, 0, 'C')
+    pdf.cell(col_widths[3], 10, f"{row['Term']} days", 1, 0, 'C')
+    pdf.cell(col_widths[4], 10, formatted_order_date, 1, 0, 'C')
+    pdf.cell(col_widths[5], 10, "Due Upon Receipt", 1, 1, 'C')
     
-    # [Keep all your existing content below...]
-    # Customer Account Info
+    # [Rest of your existing invoice content...]
+    # Installment Information
+    pdf.ln(10)
     pdf.set_font('Arial', 'B', 10)
-    pdf.cell(40, 6, 'CUST. ACCT. #:', 0, 0)
-    pdf.set_font('Arial', '', 10)
-    pdf.cell(0, 6, f"{row['Customer_Account_Number']}", 0, 1)
+    pdf.cell(0, 6, f"Installment Effort #: {int(row['Effort_No'])}", 0, 1)
+    pdf.ln(5)
     
-    pdf.set_font('Arial', 'B', 10)
-    pdf.cell(40, 6, 'ORDER #:', 0, 0)
-    pdf.set_font('Arial', '', 10)
-    pdf.cell(0, 6, f"{row['Order']}", 0, 1)
-    
-    # [Continue with all your existing invoice content...]
+    # [Continue with all your existing content...]
     
     return pdf
 
@@ -105,7 +123,7 @@ if uploaded_file:
         # Save logo temporarily if uploaded
         logo_path = None
         if logo_file:
-            logo_path = "ALM-logo.png"
+            logo_path = "temp_logo.jpg"
             with open(logo_path, "wb") as f:
                 f.write(logo_file.getbuffer())
         
