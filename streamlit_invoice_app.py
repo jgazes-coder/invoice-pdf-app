@@ -9,7 +9,7 @@ import os
 from PIL import Image
 
 st.set_page_config(page_title="ALM Invoice Generator", layout="centered")
-st.title("📄 ALM Invoice PDF Generator")
+st.title("📄 ALM Invoice PDF Generator2")
 
 # Add logo uploader with format validation
 logo_file = st.file_uploader("Upload Company Logo", type=["jpg", "jpeg", "png"])
@@ -31,7 +31,7 @@ class ALMInvoice(FPDF):
         # Invoice title
         self.set_font('Arial', 'B', 20)
         self.cell(0, 25, 'INVOICE', 0, 1, 'C')
-        self.ln(10)  # 1 inch below heading
+        self.ln(10)
 
 def process_logo(uploaded_file):
     """Validate and prepare logo for PDF"""
@@ -73,24 +73,23 @@ def create_invoice(row, logo):
         pdf = ALMInvoice(orientation="L", logo=logo)
         pdf.add_page()
         
-        # Set document margins
-        pdf.set_left_margin(15)
-        pdf.set_right_margin(15)
-        pdf.set_top_margin(15)
+        # Set strict layout control
+        pdf.set_margins(left=15, top=15, right=15)
+        pdf.set_auto_page_break(True, margin=15)
         
         # 1. Three-column header
         pdf.set_font('Arial', '', 12)
         # Row 1: Leave first column empty, Invoice #, Date
-        pdf.cell(95, 10, "", 0, 0)  # Empty first column
+        pdf.cell(95, 10, "", 0, 0)
         pdf.cell(95, 10, f"Invoice #: {row.get('Sub_Ref_No', 'N/A')}", 0, 0)
         pdf.cell(0, 10, f"Date: {datetime.now().strftime('%m/%d/%Y')}", 0, 1)
         
         # Row 2: Bill To / Ship To headers with gray background
-        pdf.set_fill_color(230, 230, 230)  # 20% gray
+        pdf.set_fill_color(230, 230, 230)
         pdf.set_font('Arial', 'B', 12)
         pdf.cell(95, 10, "Bill To", 0, 0, 'L', fill=True)
         pdf.cell(95, 10, "Ship To", 0, 0, 'L', fill=True)
-        pdf.cell(0, 10, "", 0, 1, fill=True)  # Empty third column
+        pdf.cell(0, 10, "", 0, 1, fill=True)
         
         # Row 3: Address information
         pdf.set_font('Arial', '', 12)
@@ -113,31 +112,46 @@ def create_invoice(row, logo):
         pdf.cell(95, 6, city_state_zip_ship, 0, 0, 'L')
         pdf.cell(0, 6, "", 0, 1)
         
-        pdf.ln(5)  # Line space before next section
+        pdf.ln(5)
+
+        # 2. Six-column account info table with STRICT WIDTH CONTROL
+        col_widths = [46, 37, 35, 26, 30, 37]  # Your exact requested widths
         
-        # 2. Six-column account info table
-        pdf.set_x(15)  # Reset position to left margin
-        
-        col_widths = [46, 37, 35, 26, 30, 37]  # Custom widths (sum=211mm)
+        # Custom cell drawing function that enforces widths
+        def draw_cell(width, text, border=0, fill=False, align='C'):
+            x = pdf.get_x()
+            y = pdf.get_y()
+            pdf.multi_cell(
+                w=width,
+                h=10,
+                txt=str(text),
+                border=border,
+                fill=fill,
+                align=align,
+                max_line_height=10  # Prevent text wrapping
+            )
+            pdf.set_xy(x + width, y)  # Move right
         
         # Header Row
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font('Arial', 'B', 12)
         headers = ["Cust. Acct. #", "Order #", "Purchase Order", "Term", "Order Date", "Due Date"]
+        
+        pdf.set_x(15)  # Start at left margin
         for i, header in enumerate(headers):
-            pdf.cell(col_widths[i], 10, header, 1, 0, 'C', fill=True)
+            draw_cell(col_widths[i], header, border=1, fill=True, align='C')
         pdf.ln()
         
         # Data Row
-        pdf.set_font('Arial', '', 12)
+        pdf.set_font('Arial', '', 10)  # Smaller font for better fit
         order_date = convert_excel_date(row.get('Order_date'))
         formatted_order_date = order_date.strftime('%m/%d/%Y') if order_date else "N/A"
         
         due_date = convert_excel_date(row.get('DueDate'))
-        formatted_due_date = due_date.strftime('%m/%d/%Y') if due_date else "Due Upon Receipt"
+        formatted_due_date = due_date.strftime('%m/%d/%Y') if due_date else "Due Now"
         
         data_values = [
-            str(row.get('Customer_Account_Number', ''))[:12],
+            str(row.get('Customer_Account_Number', ''))[:10],
             str(row.get('Order', ''))[:8],
             str(row.get('PO_Num', ''))[:6] if pd.notna(row.get('PO_Num')) else "",
             f"{row.get('Term', '')}d",
@@ -145,14 +159,13 @@ def create_invoice(row, logo):
             formatted_due_date
         ]
         
+        pdf.set_x(15)
         for i, value in enumerate(data_values):
-            pdf.cell(col_widths[i], 10, value, 1, 0, 'C')
+            draw_cell(col_widths[i], value, border=1, align='C')
         pdf.ln()
-        pdf.ln(10)  # Space after table
-        
-        # 3. Twelve-column product table
-        pdf.set_x(15)  # Reset position to left margin
-        
+        pdf.ln(10)
+
+        # 3. Twelve-column product table with STRICT WIDTH CONTROL
         col_widths_product = [20, 14, 12, 24, 11, 22, 17, 21, 13, 16, 20, 24]
         
         # Header Row
@@ -162,12 +175,14 @@ def create_invoice(row, logo):
             "Sub. Ref #", "Product", "Copies", "Full Journal Name", "Seats", 
             "Description", "End Date", "Sales", "S&H", "Tax", "Payment", "Total Due"
         ]
+        
+        pdf.set_x(15)
         for i, header in enumerate(product_headers):
-            pdf.cell(col_widths_product[i], 10, header, 1, 0, 'C', fill=True)
+            draw_cell(col_widths_product[i], header, border=1, fill=True, align='C')
         pdf.ln()
         
         # Data Row
-        pdf.set_font('Arial', '', 12)
+        pdf.set_font('Arial', '', 10)  # Smaller font for better fit
         expire_date = convert_excel_date(row.get('Expire_Date'))
         formatted_expire_date = expire_date.strftime('%m/%d/%Y') if expire_date else "N/A"
         
@@ -186,23 +201,29 @@ def create_invoice(row, logo):
             f"${float(row.get('Amount_Due', 0)):,.2f}"
         ]
         
+        pdf.set_x(15)
         for i, value in enumerate(product_values):
-            pdf.cell(col_widths_product[i], 10, value, 1, 0, 'C')
+            draw_cell(col_widths_product[i], value, border=1, align='C')
         pdf.ln()
         
         # Total Row
-        pdf.set_font('Arial', 'B', 12)
+        pdf.set_font('Arial', 'B', 10)
         pdf.set_fill_color(230, 230, 230)
-        # Empty cells for first 5 columns
+        pdf.set_x(15)
+        
+        # First 5 empty columns
         for _ in range(5):
-            pdf.cell(col_widths_product[_], 10, "", 1, 0, 'C', fill=True)
+            draw_cell(col_widths_product[_], "", border=1, fill=True, align='C')
+        
         # "Total Due" label
-        pdf.cell(col_widths_product[5], 10, "Total Due", 1, 0, 'C', fill=True)
+        draw_cell(col_widths_product[5], "Total Due", border=1, fill=True, align='C')
+        
         # Empty column
-        pdf.cell(col_widths_product[6], 10, "", 1, 0, 'C', fill=True)
+        draw_cell(col_widths_product[6], "", border=1, fill=True, align='C')
+        
         # Values for last 5 columns
         for i in range(7, 12):
-            pdf.cell(col_widths_product[i], 10, product_values[i], 1, 0, 'C', fill=True)
+            draw_cell(col_widths_product[i], product_values[i], border=1, fill=True, align='C')
         pdf.ln()
         
         return pdf
