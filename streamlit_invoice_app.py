@@ -211,6 +211,99 @@ def create_invoice(row, logo):
         for i in range(7, 12):
             pdf.cell(col_widths_product[i], 10, product_values[i], 1, 0, 'C', fill=True)
         pdf.ln()
+
+                # [...] (Previous code remains exactly the same until after the twelve-column table)
+
+        # Installment Effort line with gray background
+        pdf.set_fill_color(230, 230, 230)  # 20% gray
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(40, 10, "Installment Effort #:", 0, 0, 'L', fill=True)
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 10, f" {row.get('Effort_No', 'N/A')}", 0, 1, 'L', fill=True)
+        pdf.ln(5)
+
+        # 4th Quarter Payment section
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(60, 10, "4th Quarter Payment", 0, 0, 'L')
+        
+        # Create the 2x4 table
+        table_width = 120  # Total width for the right side table
+        col1_width = 80    # Width for label column
+        col2_width = 40    # Width for value column
+        
+        # Table data - labels and corresponding CSV columns
+        table_data = [
+            ("CUMULATIVE QUARTERLY BILLINGS:", "GroupOutst"),
+            ("PAYMENTS:", "Paid_Amount"),
+            ("CURRENT QUARTERLY BILLINGS:", "Instalment_Due"),
+            ("MINIMUM BAL. DUE TODAY:", "Instalment")
+        ]
+        
+        # Draw the table
+        for label, col_name in table_data:
+            pdf.set_x(75)  # Position for the table
+            pdf.set_font('Arial', 'B', 10)
+            pdf.cell(col1_width, 10, label, 1, 0, 'L')
+            pdf.set_font('Arial', '', 10)
+            value = row.get(col_name, 'N/A')
+            if isinstance(value, (int, float)):
+                value = f"${float(value):,.2f}"
+            pdf.cell(col2_width, 10, str(value), 1, 1, 'R')
+        
+        pdf.ln(10)
+
+        # Account Manager line
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, "Call your Account Manager, Heather Granger at 973-854-2932 for information about our publications.", 0, 1, 'C')
+        pdf.ln(5)
+
+        # Payment Options section
+        pdf.set_font('Arial', 'BU', 12)
+        pdf.cell(0, 10, "Payment Options", 0, 1, 'C')
+        pdf.ln(10)
+
+        # Check payment instructions
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(30, 6, "To Pay by Check:", 0, 0, 'L')
+        pdf.set_font('Arial', '', 12)
+        pdf.multi_cell(0, 6, "Make checks payable to ALM Global, LLC and reference your subscription number on your check. Allow 14-21 days for your check to credit to your account. Disregard invoices you may receive once you have paid.")
+        pdf.ln(5)
+        
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 6, "Send your check along with this form to the address below:", 0, 1, 'L')
+        pdf.cell(0, 6, "US: ALM Global, LLC, PO BOX 70162, Philadelphia, PA, 19176-9628", 0, 1, 'L')
+        pdf.ln(5)
+
+        # EFT payment instructions
+        pdf.set_font('Arial', 'BU', 12)
+        pdf.cell(0, 10, "To Pay by EFT:", 0, 1, 'L')
+        pdf.set_font('Arial', '', 12)
+        pdf.cell(0, 6, "BANK NAME: WELLS FARGO BANK, N.A.", 0, 1, 'L')
+        pdf.cell(0, 6, "ADDRESS: 420 Montgomery Street, San Francisco, CA 94104", 0, 1, 'L')
+        pdf.cell(0, 6, "ACCOUNT NUMBER: 2000005971161", 0, 1, 'L')
+        pdf.cell(0, 6, "ABA NUMBER: 121000248", 0, 1, 'L')
+        pdf.cell(0, 6, "BANK ACCOUNT NAME: ALM Global, LLC", 0, 1, 'L')
+        pdf.cell(0, 6, "SWIFT: WFBIUS6S", 0, 1, 'L')
+        pdf.cell(0, 6, "CHIPS: 0407", 0, 1, 'L')
+        pdf.ln(5)
+
+        # Remittance advice
+        pdf.cell(0, 6, "Please include your invoice # and copy with any check payment or", 0, 1, 'L')
+        pdf.cell(0, 6, "email ar.remit.advice@alm.com for electronic payments.", 0, 1, 'L')
+        pdf.ln(10)
+
+        # Footer section
+        pdf.set_font('Arial', '', 12)
+        pdf.cell(0, 6, "Thank you for your business.", 0, 1, 'C')
+        pdf.cell(0, 6, "For general inquiries and customer support, contact us by", 0, 1, 'C')
+        pdf.cell(0, 6, "phone 1-877-256-2472, email: customercare@alm.com, or fax 646-822-5050", 0, 1, 'C')
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 6, "If you have already made payment in full, please disregard this notification.", 0, 1, 'C')
+
+        return pdf
+    except Exception as e:
+        st.error(f"Error generating PDF: {str(e)}")
+        return None
         
         return pdf
     except Exception as e:
