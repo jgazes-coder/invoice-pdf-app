@@ -69,7 +69,7 @@ def create_invoice(row, logo):
         # 1. Three-column header
         pdf.set_font('Arial', '', 12)
         pdf.cell(95, 10, "", 0, 0)  # Empty first column
-        pdf.cell(95, 10, f"Invoice #: {row.get('Sub_Ref_No', 'N/A')}", 0, 0)
+        pdf.cell(95, 10, f"Invoice #: {row.get('Invoic', 'N/A')}", 0, 0)
         pdf.cell(0, 10, f"Date: {datetime.now().strftime('%m/%d/%Y')}", 0, 1)
         
         # 2. Bill To / Ship To section
