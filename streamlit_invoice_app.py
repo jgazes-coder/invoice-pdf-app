@@ -111,7 +111,7 @@ def create_invoice(row, logo):
         pdf.ln(5)  # Line space before next section
         
         # 2. Six-column account info table
-        col_widths = [30, 25, 40, 25, 30, 30]  # Adjust as needed
+        col_widths = [46, 37, 35, 26, 30, 37]  # Adjust as needed
         
         # Header Row
         pdf.set_fill_color(230, 230, 230)  # 20% gray
@@ -151,7 +151,7 @@ def create_invoice(row, logo):
             "Sub. Ref #", "Product", "Copies", "Full Journal Name", "Seats", 
             "Description", "End Date", "Sales", "S&H", "Tax", "Payment", "Total Due"
         ]
-        col_widths_product = [25, 25, 15, 40, 15, 30, 20, 20, 15, 15, 20, 20]
+        col_widths_product = [20, 14, 12, 24, 11, 22, 17, 21, 13, 16, 20, 24]
         
         for i, header in enumerate(product_headers):
             pdf.cell(col_widths_product[i], 10, header, 1, 0, 'C', fill=True)
