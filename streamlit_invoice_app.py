@@ -9,7 +9,7 @@ import os
 from PIL import Image
 
 st.set_page_config(page_title="ALM Invoice Generator", layout="centered")
-st.title("📄 ALM Invoice PDF Generator2")
+st.title("📄 ALM Invoice PDF Generator")
 
 # Add logo uploader with format validation
 logo_file = st.file_uploader("Upload Company Logo", type=["jpg", "jpeg", "png"])
@@ -123,12 +123,11 @@ def create_invoice(row, logo):
             y = pdf.get_y()
             pdf.multi_cell(
                 w=width,
-                h=10,
+                h=10,  # Fixed height
                 txt=str(text),
                 border=border,
                 fill=fill,
-                align=align,
-                max_line_height=10  # Prevent text wrapping
+                align=align
             )
             pdf.set_xy(x + width, y)  # Move right
         
