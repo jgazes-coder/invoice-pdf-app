@@ -8,7 +8,7 @@ import tempfile
 import os
 from PIL import Image
 
-st.set_page_config(page_title="ALM Invoice Generator", layout="centered")
+st.set_page_config(page_title="ALM Invoice Generator1", layout="centered")
 st.title("📄 ALM Invoice PDF Generator")
 
 # Add logo uploader with format validation
