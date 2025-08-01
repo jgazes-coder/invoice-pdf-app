@@ -144,7 +144,7 @@ def create_invoice(row, logo):
         pdf.ln(10)
 
         # 4. Twelve-column product table - FORCE EXACT WIDTHS
-        col_widths_product = 27, 18, 18, 25, 15, 28, 27, 27, 18, 18, 25, 25]
+        col_widths_product = [27, 18, 18, 25, 15, 28, 27, 27, 18, 18, 25, 25]
         
         # Header Row
         pdf.set_fill_color(230, 230, 230)
