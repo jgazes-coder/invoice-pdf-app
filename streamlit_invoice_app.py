@@ -102,7 +102,7 @@ def create_invoice(row, logo):
         pdf.ln(5)
 
         # 3. Six-column account info table - FORCE EXACT WIDTHS
-        col_widths = [46, 37, 35, 26, 30, 37]  # Your exact requested widths
+        col_widths = [76, 37, 35, 26, 30, 37]  # Your exact requested widths
         
         # Header Row
         pdf.set_fill_color(230, 230, 230)
