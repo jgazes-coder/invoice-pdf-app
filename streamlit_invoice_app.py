@@ -59,7 +59,7 @@ def convert_excel_date(excel_date):
 
 def create_invoice(row, logo):
     try:
-        pdf = ALMInvoice(orientation="L", logo=logo)
+        pdf = ALMInvoice(orientation="P", logo=logo)
         pdf.add_page()
         
         # Set document margins
@@ -68,41 +68,41 @@ def create_invoice(row, logo):
         
         # 1. Three-column header
         pdf.set_font('Arial', '', 12)
-        pdf.cell(95, 10, "", 0, 0)  # Empty first column
-        pdf.cell(95, 10, f"Invoice #: {row.get('Invoic', 'N/A')}", 0, 0)
+        pdf.cell(60, 10, "", 0, 0)  # Empty first column
+        pdf.cell(60, 10, f"Invoice #: {row.get('Invoic', 'N/A')}", 0, 0)
         pdf.cell(0, 10, f"Date: {datetime.now().strftime('%m/%d/%Y')}", 0, 1)
         
         # 2. Bill To / Ship To section
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font('Arial', 'B', 12)
-        pdf.cell(95, 10, "Bill To", 0, 0, 'L', fill=True)
-        pdf.cell(95, 10, "Ship To", 0, 0, 'L', fill=True)
+        pdf.cell(60, 10, "Bill To", 0, 0, 'L', fill=True)
+        pdf.cell(60, 10, "Ship To", 0, 0, 'L', fill=True)
         pdf.cell(0, 10, "", 0, 1, fill=True)
         
         pdf.set_font('Arial', '', 12)
         # Bill To Address
-        pdf.cell(95, 6, f"{row.get('Bill_To_Contact_name', '')}", 0, 0, 'L')
-        pdf.cell(95, 6, f"{row.get('Ship_To_Contact_name', '')}", 0, 0, 'L')
+        pdf.cell(60, 6, f"{row.get('Bill_To_Contact_name', '')}", 0, 0, 'L')
+        pdf.cell(60, 6, f"{row.get('Ship_To_Contact_name', '')}", 0, 0, 'L')
         pdf.cell(0, 6, f"PROMO: {row.get('Curr_Promo_Code', '')}", 0, 1, 'L')
         
-        pdf.cell(95, 6, f"{row.get('Bill_to_Company', '')}", 0, 0, 'L')
-        pdf.cell(95, 6, f"{row.get('Ship_to_Company', '')}", 0, 0, 'L')
+        pdf.cell(60, 6, f"{row.get('Bill_to_Company', '')}", 0, 0, 'L')
+        pdf.cell(60, 6, f"{row.get('Ship_to_Company', '')}", 0, 0, 'L')
         pdf.cell(0, 6, f"SALES: {row.get('SalesCode', '')}", 0, 1, 'L')
         
-        pdf.cell(95, 6, f"{row.get('Bill_to_St_Address', '')}", 0, 0, 'L')
-        pdf.cell(95, 6, f"{row.get('Ship_to_St_Address', '')}", 0, 0, 'L')
+        pdf.cell(60, 6, f"{row.get('Bill_to_St_Address', '')}", 0, 0, 'L')
+        pdf.cell(60, 6, f"{row.get('Ship_to_St_Address', '')}", 0, 0, 'L')
         pdf.cell(0, 6, "", 0, 1)
         
         city_state_zip_bill = f"{row.get('Bill_to_City', '')} {row.get('Bill_to_State', '')} {row.get('Bill_to_Zip', '')}"
         city_state_zip_ship = f"{row.get('Ship_to_City', '')} {row.get('Ship_to_State', '')} {row.get('Ship_to_Zip', '')}"
-        pdf.cell(95, 6, city_state_zip_bill, 0, 0, 'L')
-        pdf.cell(95, 6, city_state_zip_ship, 0, 0, 'L')
+        pdf.cell(60, 6, city_state_zip_bill, 0, 0, 'L')
+        pdf.cell(60, 6, city_state_zip_ship, 0, 0, 'L')
         pdf.cell(0, 6, "", 0, 1)
         
         pdf.ln(5)
 
         # 3. Six-column account info table - FORCE EXACT WIDTHS
-        col_widths = [50, 40, 40, 30, 35, 40]  # Your exact requested widths
+        col_widths = [46.44, 37.44, 34.46, 26.31, 29.49, 37.41]  # Your exact requested widths
         
         # Header Row
         pdf.set_fill_color(230, 230, 230)
@@ -144,7 +144,7 @@ def create_invoice(row, logo):
         pdf.ln(10)
 
         # 4. Twelve-column product table - FORCE EXACT WIDTHS
-        col_widths_product = [27, 18, 18, 25, 15, 28, 27, 27, 18, 18, 25, 25]
+        col_widths_product = [20, 14, 12.31, 23.71, 10.74, 22.36, 26.62, 21, 12.5, 15.6, 19.8, 23.8]
         
         # Header Row
         pdf.set_fill_color(230, 230, 230)
