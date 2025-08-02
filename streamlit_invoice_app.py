@@ -75,29 +75,29 @@ def create_invoice(row, logo):
         # 2. Bill To / Ship To section
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font('Arial', 'B', 10)
-        pdf.cell(60, 10, "Bill To", 0, 0, 'L', fill=True)
-        pdf.cell(60, 10, "Ship To", 0, 0, 'L', fill=True)
-        pdf.cell(0, 10, "", 0, 1, fill=True)
+        pdf.cell(60, 6.5, "Bill To", 0, 0, 'L', fill=True)
+        pdf.cell(60, 6.5, "Ship To", 0, 0, 'L', fill=True)
+        pdf.cell(0, 6.5, "", 0, 1, fill=True)
         
         pdf.set_font('Arial', '', 10)
         # Bill To Address
-        pdf.cell(60, 6, f"{row.get('Bill_To_Contact_name', '')}", 0, 0, 'L')
-        pdf.cell(60, 6, f"{row.get('Ship_To_Contact_name', '')}", 0, 0, 'L')
-        pdf.cell(0, 6, f"PROMO: {row.get('Curr_Promo_Code', '')}", 0, 1, 'L')
+        pdf.cell(60, 4, f"{row.get('Bill_To_Contact_name', '')}", 0, 0, 'L')
+        pdf.cell(60, 4, f"{row.get('Ship_To_Contact_name', '')}", 0, 0, 'L')
+        pdf.cell(0, 4, f"PROMO: {row.get('Curr_Promo_Code', '')}", 0, 1, 'L')
         
-        pdf.cell(60, 6, f"{row.get('Bill_to_Company', '')}", 0, 0, 'L')
-        pdf.cell(60, 6, f"{row.get('Ship_to_Company', '')}", 0, 0, 'L')
-        pdf.cell(0, 6, f"SALES: {row.get('SalesCode', '')}", 0, 1, 'L')
+        pdf.cell(60, 4, f"{row.get('Bill_to_Company', '')}", 0, 0, 'L')
+        pdf.cell(60, 4, f"{row.get('Ship_to_Company', '')}", 0, 0, 'L')
+        pdf.cell(0, 4, f"SALES: {row.get('SalesCode', '')}", 0, 1, 'L')
         
-        pdf.cell(60, 6, f"{row.get('Bill_to_St_Address', '')}", 0, 0, 'L')
-        pdf.cell(60, 6, f"{row.get('Ship_to_St_Address', '')}", 0, 0, 'L')
-        pdf.cell(0, 6, "", 0, 1)
+        pdf.cell(60, 4, f"{row.get('Bill_to_St_Address', '')}", 0, 0, 'L')
+        pdf.cell(60, 4, f"{row.get('Ship_to_St_Address', '')}", 0, 0, 'L')
+        pdf.cell(0, 4, "", 0, 1)
         
         city_state_zip_bill = f"{row.get('Bill_to_City', '')} {row.get('Bill_to_State', '')} {row.get('Bill_to_Zip', '')}"
         city_state_zip_ship = f"{row.get('Ship_to_City', '')} {row.get('Ship_to_State', '')} {row.get('Ship_to_Zip', '')}"
-        pdf.cell(60, 6, city_state_zip_bill, 0, 0, 'L')
-        pdf.cell(60, 6, city_state_zip_ship, 0, 0, 'L')
-        pdf.cell(0, 6, "", 0, 1)
+        pdf.cell(60, 4, city_state_zip_bill, 0, 0, 'L')
+        pdf.cell(60, 4, city_state_zip_ship, 0, 0, 'L')
+        pdf.cell(0, 4, "", 0, 1)
         
         pdf.ln(5)
 
