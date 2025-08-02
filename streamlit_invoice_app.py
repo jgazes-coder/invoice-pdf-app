@@ -1,183 +1,123 @@
-import streamlit as st
-import pandas as pd
-from fpdf import FPDF
-from zipfile import ZipFile
-import io
-from datetime import datetime, timedelta
-import tempfile
-import os
-from PIL import Image
-
-st.set_page_config(page_title="ALM Invoice Generator", layout="centered")
-st.title("📄 ALM Invoice PDF Generator")
-
-# Add logo uploader with format validation
-logo_file = st.file_uploader("Upload Company Logo", type=["jpg", "jpeg", "png"])
-uploaded_file = st.file_uploader("Upload Subscription Report CSV", type=["csv"])
-
-class ALMInvoice(FPDF):
-    def __init__(self, *args, **kwargs):
-        self.logo = kwargs.pop('logo', None)
-        super().__init__(*args, **kwargs)
-        
-    def header(self):
-        # Add logo if provided and valid
-        if self.logo and self.logo['valid']:
-            try:
-                self.image(self.logo['path'], x=10, y=8, w=30)
-            except:
-                pass
-        
-        # Invoice title
-        self.set_font('Arial', 'B', 20)
-        self.cell(0, 25, 'INVOICE', 0, 1, 'C')
-        self.ln(10)
-
-def process_logo(uploaded_file):
-    if not uploaded_file:
-        return None
-    try:
-        img = Image.open(uploaded_file)
-        img.verify()
-        temp_dir = tempfile.mkdtemp()
-        logo_path = os.path.join(temp_dir, 'logo.jpg')
-        uploaded_file.seek(0)
-        with open(logo_path, 'wb') as f:
-            f.write(uploaded_file.getbuffer())
-        return {'path': logo_path, 'valid': True, 'temp_dir': temp_dir}
-    except Exception as e:
-        st.warning(f"Invalid logo image: {str(e)}")
-        return None
-
-def convert_excel_date(excel_date):
-    try:
-        if pd.isna(excel_date) or excel_date == '':
-            return None
-        return datetime(1899, 12, 30) + timedelta(days=int(float(excel_date)))
-    except:
-        return None
-
 def create_invoice(row, logo):
     try:
-        # Change to portrait with 5mm margins
+        # Initialize PDF with portrait orientation and tight margins
         pdf = ALMInvoice(orientation="P", logo=logo)
         pdf.add_page()
-        pdf.set_margins(left=5, top=15, right=5)  # 5mm side margins
+        pdf.set_margins(left=10, top=15, right=10)  # Slightly wider margins for safety
+        pdf.set_auto_page_break(auto=True, margin=15)
         
-        # Reduce base font size from 12 to 10
-        base_font_size = 10
-        pdf.set_font('Arial', '', base_font_size)
+        # Font sizes
+        base_font_size = 9  # Slightly smaller base font
+        header_font_size = 16  # Smaller invoice header
         
-        # 1. Three-column header (adjusted for portrait)
-        pdf.cell(60, 10, "", 0, 0)  # Reduced empty space
-        pdf.cell(60, 10, f"Invoice #: {row.get('Invoic', 'N/A')}", 0, 0)
-        pdf.cell(0, 10, f"Date: {datetime.now().strftime('%m/%d/%Y')}", 0, 1)
-        
-        # 2. Bill To / Ship To section
-        pdf.set_fill_color(230, 230, 230)
-        pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(95, 10, "Bill To", 0, 0, 'L', fill=True)
-        pdf.cell(95, 10, "Ship To", 0, 0, 'L', fill=True)
-        pdf.cell(0, 10, "", 0, 1, fill=True)
-        
-        pdf.set_font('Arial', '', base_font_size)
-        # Bill To Address
-        pdf.cell(95, 6, f"{row.get('Bill_To_Contact_name', '')}", 0, 0, 'L')
-        pdf.cell(95, 6, f"{row.get('Ship_To_Contact_name', '')}", 0, 0, 'L')
-        pdf.cell(0, 6, f"PROMO: {row.get('Curr_Promo_Code', '')}", 0, 1, 'L')
-        
-        pdf.cell(95, 6, f"{row.get('Bill_to_Company', '')}", 0, 0, 'L')
-        pdf.cell(95, 6, f"{row.get('Ship_to_Company', '')}", 0, 0, 'L')
-        pdf.cell(0, 6, f"SALES: {row.get('SalesCode', '')}", 0, 1, 'L')
-        
-        pdf.cell(95, 6, f"{row.get('Bill_to_St_Address', '')}", 0, 0, 'L')
-        pdf.cell(95, 6, f"{row.get('Ship_to_St_Address', '')}", 0, 0, 'L')
-        pdf.cell(0, 6, "", 0, 1)
-        
-        city_state_zip_bill = f"{row.get('Bill_to_City', '')} {row.get('Bill_to_State', '')} {row.get('Bill_to_Zip', '')}"
-        city_state_zip_ship = f"{row.get('Ship_to_City', '')} {row.get('Ship_to_State', '')} {row.get('Ship_to_Zip', '')}"
-        pdf.cell(95, 6, city_state_zip_bill, 0, 0, 'L')
-        pdf.cell(95, 6, city_state_zip_ship, 0, 0, 'L')
-        pdf.cell(0, 6, "", 0, 1)
-        
+        # 0. Logo and Invoice Header
+        pdf.set_font('Arial', 'B', header_font_size)
+        pdf.cell(0, 15, 'INVOICE', 0, 1, 'C')
         pdf.ln(5)
 
-        # 3. Six-column account info table - Adjusted for portrait
-        col_widths = [30, 30, 40, 20, 30, 30]  # Narrower widths
-        
-        # Header Row
+        # 1. Three-column header (invoice#, date)
+        pdf.set_font('Arial', '', base_font_size)
+        col1_width = 60
+        col2_width = 60
+        pdf.cell(col1_width, 6, "", 0, 0)
+        pdf.cell(col2_width, 6, f"Invoice #: {row.get('Invoic', 'N/A')}", 0, 0)
+        pdf.cell(0, 6, f"Date: {datetime.now().strftime('%m/%d/%Y')}", 0, 1)
+        pdf.ln(8)
+
+        # 2. Bill To / Ship To section (compact version)
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font('Arial', 'B', base_font_size)
-        headers = ["Cust. Acct. #", "Order #", "Purchase Order", "Term", "Order Date", "Due Date"]
         
-        # Reset to left margin
-        pdf.set_x(5)
+        # Header row
+        pdf.cell(95, 6, "Bill To", 0, 0, 'L', fill=True)
+        pdf.cell(95, 6, "Ship To", 0, 1, 'L', fill=True)
         
-        # Draw each header cell with exact width
+        # Content rows
+        pdf.set_font('Arial', '', base_font_size)
+        fields = [
+            ('Bill_To_Contact_name', 'Ship_To_Contact_name'),
+            ('Bill_to_Company', 'Ship_to_Company'),
+            ('Bill_to_St_Address', 'Ship_to_St_Address'),
+            ('', '')  # City/State/Zip will be combined
+        ]
+        
+        for bill_field, ship_field in fields:
+            if bill_field:
+                bill_value = str(row.get(bill_field, ''))
+                ship_value = str(row.get(ship_field, ''))
+            else:
+                # Combine city/state/zip
+                bill_value = f"{row.get('Bill_to_City', '')} {row.get('Bill_to_State', '')} {row.get('Bill_to_Zip', '')}"
+                ship_value = f"{row.get('Ship_to_City', '')} {row.get('Ship_to_State', '')} {row.get('Ship_to_Zip', '')}"
+            
+            pdf.cell(95, 5, bill_value, 0, 0, 'L')
+            pdf.cell(95, 5, ship_value, 0, 1, 'L')
+        
+        # Promo and sales code on same line
+        pdf.cell(95, 5, f"PROMO: {row.get('Curr_Promo_Code', '')}", 0, 0, 'L')
+        pdf.cell(95, 5, f"SALES: {row.get('SalesCode', '')}", 0, 1, 'L')
+        pdf.ln(8)
+
+        # 3. Six-column account info table (compact)
+        col_widths = [25, 25, 35, 20, 25, 25]  # Total: 155 (fits in 190mm width with margins)
+        headers = ["Cust. Acct.", "Order #", "PO Num", "Term", "Order Date", "Due Date"]
+        
+        # Header
+        pdf.set_fill_color(230, 230, 230)
+        pdf.set_font('Arial', 'B', base_font_size)
+        pdf.set_x(10)
         for width, header in zip(col_widths, headers):
-            pdf.cell(width, 10, header, 1, 0, 'C', fill=True)
+            pdf.cell(width, 8, header, 1, 0, 'C', fill=True)
         pdf.ln()
         
-        # Data Row
+        # Data
         pdf.set_font('Arial', '', base_font_size)
+        pdf.set_x(10)
         order_date = convert_excel_date(row.get('Order_date'))
-        formatted_order_date = order_date.strftime('%m/%d/%Y') if order_date else "N/A"
-        
         due_date = convert_excel_date(row.get('DueDate'))
-        formatted_due_date = due_date.strftime('%m/%d/%Y') if due_date else "Due Upon Receipt"
         
-        data_values = [
+        cells = [
             str(row.get('Customer_Account_Number', '')),
             str(row.get('Order', '')),
             str(row.get('PO_Num', '')) if pd.notna(row.get('PO_Num')) else "",
             f"{row.get('Term', '')} days",
-            formatted_order_date,
-            formatted_due_date
+            order_date.strftime('%m/%d/%Y') if order_date else "N/A",
+            due_date.strftime('%m/%d/%Y') if due_date else "Upon Receipt"
         ]
         
-        # Reset to left margin
-        pdf.set_x(5)
-        
-        # Draw each data cell with exact width
-        for width, value in zip(col_widths, data_values):
-            pdf.cell(width, 10, value, 1, 0, 'C')
-        pdf.ln()
-        pdf.ln(5)  # Reduced spacing
+        for width, value in zip(col_widths, cells):
+            pdf.cell(width, 8, value, 1, 0, 'C')
+        pdf.ln(10)
 
-        # 4. Twelve-column product table - Modified for portrait
-        col_widths_product = [18, 12, 10, 22, 10, 18, 15, 18, 12, 14, 16, 20]  # Adjusted widths
-        
-        # Header Row with wrapped text
-        pdf.set_fill_color(230, 230, 230)
-        pdf.set_font('Arial', 'B', base_font_size)
-        
+        # 4. Twelve-column product table (FIXED version)
+        col_widths = [18, 15, 12, 25, 10, 20, 18, 15, 12, 12, 15, 18]  # Total: 190mm
         headers = [
-            "Sub. Ref #", "Product", "Copies", 
-            "Full\nJournal Name",  # \n forces line break
-            "Seats", "Description", 
-            "End Date", "Sales", "S&H", "Tax", "Payment", "Total Due"
+            "Sub Ref", "Product", "Copies", "Journal", 
+            "Seats", "Desc", "End Date", "Sales", 
+            "S&H", "Tax", "Payment", "Total Due"
         ]
         
-        pdf.set_x(5)  # Start at 5mm margin
-        for width, header in zip(col_widths_product, headers):
-            pdf.multi_cell(width, 5, header, 1, 'C', fill=True)  # multi_cell for wrapping
-            pdf.set_xy(pdf.get_x() + width, pdf.get_y() - 5)  # Manual positioning
+        # Header row - using single line cells
+        pdf.set_fill_color(230, 230, 230)
+        pdf.set_font('Arial', 'B', base_font_size-1)  # Slightly smaller
+        pdf.set_x(10)
+        for width, header in zip(col_widths, headers):
+            pdf.cell(width, 8, header, 1, 0, 'C', fill=True)
+        pdf.ln()
         
-        pdf.ln(5)  # Adjust spacing
-        
-        # Data Row
+        # Data row
         pdf.set_font('Arial', '', base_font_size)
+        pdf.set_x(10)
         expire_date = convert_excel_date(row.get('Expire_Date'))
-        formatted_expire_date = expire_date.strftime('%m/%d/%Y') if expire_date else "N/A"
         
-        product_values = [
+        cells = [
             str(row.get('Sub_Ref_No', '')),
             str(row.get('Pub_Code', '')),
             str(int(row.get('Quantity', 0))),
-            str(row.get('Pub_desc', '')),
+            str(row.get('Pub_desc', ''))[:15],  # Truncate long journal names
             str(int(row.get('Num_of_Seats', 0))),
             str(row.get('Delivery_Code', '')),
-            formatted_expire_date,
+            expire_date.strftime('%m/%d/%Y') if expire_date else "N/A",
             f"${float(row.get('Material_Amount', 0)):,.2f}",
             f"${float(row.get('Postage', 0)):,.2f}",
             f"${float(row.get('Tax', 0)):,.2f}",
@@ -185,168 +125,72 @@ def create_invoice(row, logo):
             f"${float(row.get('Amount_Due', 0)):,.2f}"
         ]
         
-        # Reset to left margin
-        pdf.set_x(5)
-        
-        # Draw each data cell with exact width
-        for width, value in zip(col_widths_product, product_values):
-            pdf.cell(width, 10, value, 1, 0, 'C')
+        for width, value in zip(col_widths, cells):
+            pdf.cell(width, 8, value, 1, 0, 'C')
         pdf.ln()
         
-        # Total Row
+        # Total row
         pdf.set_font('Arial', 'B', base_font_size)
-        pdf.set_fill_color(230, 230, 230)
-        
-        # Reset to left margin
-        pdf.set_x(5)
-        
-        # First 5 empty columns
-        for _ in range(5):
-            pdf.cell(col_widths_product[_], 10, "", 1, 0, 'C', fill=True)
-        
-        # "Total Due" label
-        pdf.cell(col_widths_product[5], 10, "Total Due", 1, 0, 'C', fill=True)
-        
-        # Empty column
-        pdf.cell(col_widths_product[6], 10, "", 1, 0, 'C', fill=True)
-        
-        # Values for last 5 columns
+        pdf.set_x(10)
+        for i in range(5):
+            pdf.cell(col_widths[i], 8, "", 1, 0, 'C', fill=True)
+        pdf.cell(col_widths[5], 8, "Total Due", 1, 0, 'C', fill=True)
+        pdf.cell(col_widths[6], 8, "", 1, 0, 'C', fill=True)
         for i in range(7, 12):
-            pdf.cell(col_widths_product[i], 10, product_values[i], 1, 0, 'C', fill=True)
-        pdf.ln(5)
+            pdf.cell(col_widths[i], 8, cells[i], 1, 0, 'C', fill=True)
+        pdf.ln(10)
 
-        # Installment Effort line with gray background
-        pdf.set_fill_color(230, 230, 230)
+        # 5. Installment and Payment Info (compact)
         pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(40, 10, "Installment Effort #:", 0, 0, 'L', fill=True)
+        pdf.cell(40, 6, "Installment Effort #:", 0, 0, 'L')
         pdf.set_font('Arial', '', base_font_size)
-        pdf.cell(0, 10, f" {row.get('Effort_No', 'N/A')}", 0, 1, 'L', fill=True)
+        pdf.cell(0, 6, str(row.get('Effort_No', 'N/A')), 0, 1, 'L')
         pdf.ln(5)
 
-        # 4th Quarter Payment section
-        pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(60, 10, "4th Quarter Payment", 0, 0, 'L')
-        
-        # Create the 2x4 table
-        table_width = 120  # Total width for the right side table
-        col1_width = 80    # Width for label column
-        col2_width = 40    # Width for value column
-        
-        # Table data - labels and corresponding CSV columns
+        # Payment table (right-aligned)
         table_data = [
-            ("CUMULATIVE QUARTERLY BILLINGS:", "GroupOutst"),
+            ("CUMULATIVE BILLINGS:", "GroupOutst"),
             ("PAYMENTS:", "Paid_Amount"),
-            ("CURRENT QUARTERLY BILLINGS:", "Instalment_Due"),
-            ("MINIMUM BAL. DUE TODAY:", "Instalment")
+            ("CURRENT BILLINGS:", "Instalment_Due"),
+            ("BAL. DUE TODAY:", "Instalment")
         ]
         
-        # Draw the table
-        for label, col_name in table_data:
-            pdf.set_x(75)  # Position for the table
+        for label, field in table_data:
+            pdf.set_x(100)
             pdf.set_font('Arial', 'B', base_font_size)
-            pdf.cell(col1_width, 10, label, 1, 0, 'L')
+            pdf.cell(60, 6, label, 0, 0, 'L')
             pdf.set_font('Arial', '', base_font_size)
-            value = row.get(col_name, 'N/A')
-            if isinstance(value, (int, float)):
-                value = f"${float(value):,.2f}"
-            pdf.cell(col2_width, 10, str(value), 1, 1, 'R')
-        
-        pdf.ln(5)
+            value = row.get(field, 0)
+            pdf.cell(30, 6, f"${float(value):,.2f}", 0, 1, 'R')
+        pdf.ln(8)
 
-        # Account Manager line
-        pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(0, 10, "Call your Account Manager, Heather Granger at 973-854-2932 for information about our publications.", 0, 1, 'C')
-        pdf.ln(5)
-
-        # Payment Options section
+        # 6. Payment instructions (compact)
         pdf.set_font('Arial', 'BU', base_font_size)
-        pdf.cell(0, 10, "Payment Options", 0, 1, 'C')
-        pdf.ln(5)
-
-        # Check payment instructions
-        pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(30, 6, "To Pay by Check:", 0, 0, 'L')
-        pdf.set_font('Arial', '', base_font_size)
-        pdf.multi_cell(0, 6, "Make checks payable to ALM Global, LLC and reference your subscription number on your check. Allow 14-21 days for your check to credit to your account. Disregard invoices you may receive once you have paid.")
-        pdf.ln(5)
+        pdf.cell(0, 6, "Payment Options", 0, 1, 'L')
+        pdf.ln(3)
         
         pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(0, 6, "Send your check along with this form to the address below:", 0, 1, 'L')
-        pdf.cell(0, 6, "US: ALM Global, LLC, PO BOX 70162, Philadelphia, PA, 19176-9628", 0, 1, 'L')
-        pdf.ln(5)
-
-        # EFT payment instructions
-        pdf.set_font('Arial', 'BU', base_font_size)
-        pdf.cell(0, 10, "To Pay by EFT:", 0, 1, 'L')
+        pdf.cell(25, 6, "By Check:", 0, 0, 'L')
         pdf.set_font('Arial', '', base_font_size)
-        pdf.cell(0, 6, "BANK NAME: WELLS FARGO BANK, N.A.", 0, 1, 'L')
-        pdf.cell(0, 6, "ADDRESS: 420 Montgomery Street, San Francisco, CA 94104", 0, 1, 'L')
-        pdf.cell(0, 6, "ACCOUNT NUMBER: 2000005971161", 0, 1, 'L')
-        pdf.cell(0, 6, "ABA NUMBER: 121000248", 0, 1, 'L')
-        pdf.cell(0, 6, "BANK ACCOUNT NAME: ALM Global, LLC", 0, 1, 'L')
-        pdf.cell(0, 6, "SWIFT: WFBIUS6S", 0, 1, 'L')
-        pdf.cell(0, 6, "CHIPS: 0407", 0, 1, 'L')
-        pdf.ln(5)
-
-        # Remittance advice
-        pdf.cell(0, 6, "Please include your invoice # and copy with any check payment or", 0, 1, 'L')
-        pdf.cell(0, 6, "email ar.remit.advice@alm.com for electronic payments.", 0, 1, 'L')
-        pdf.ln(5)
-
-        # Footer section
-        pdf.set_font('Arial', '', base_font_size)
-        pdf.cell(0, 6, "Thank you for your business.", 0, 1, 'C')
-        pdf.cell(0, 6, "For general inquiries and customer support, contact us by", 0, 1, 'C')
-        pdf.cell(0, 6, "phone 1-877-256-2472, email: customercare@alm.com, or fax 646-822-5050", 0, 1, 'C')
+        pdf.multi_cell(0, 6, "Make payable to ALM Global, LLC. Mail to: PO BOX 70162, Philadelphia, PA 19176-9628")
+        pdf.ln(3)
+        
         pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(0, 6, "If you have already made payment in full, please disregard this notification.", 0, 1, 'C')
+        pdf.cell(25, 6, "By EFT:", 0, 0, 'L')
+        pdf.set_font('Arial', '', base_font_size)
+        pdf.multi_cell(0, 6, "Wells Fargo Bank | ABA: 121000248 | Acct: 2000005971161 | SWIFT: WFBIUS6S")
+        pdf.ln(3)
+        
+        pdf.multi_cell(0, 6, "Email remittance to: ar.remit.advice@alm.com")
+        pdf.ln(5)
+        
+        # 7. Footer
+        pdf.set_font('Arial', '', base_font_size-1)
+        pdf.cell(0, 6, "Thank you for your business. Contact: 1-877-256-2472 | customercare@alm.com", 0, 1, 'C')
+        pdf.set_font('Arial', 'B', base_font_size-1)
+        pdf.cell(0, 6, "If already paid, please disregard this notice.", 0, 1, 'C')
 
         return pdf
     except Exception as e:
         st.error(f"Error generating PDF: {str(e)}")
         return None
-
-if uploaded_file:
-    try:
-        # Process logo first
-        logo = process_logo(logo_file)
-        
-        # Read CSV
-        df = pd.read_csv(uploaded_file)
-        zip_buffer = io.BytesIO()
-        success_count = 0
-        
-        with ZipFile(zip_buffer, 'w') as zip_file:
-            for _, row in df.iterrows():
-                pdf = create_invoice(row, logo)
-                if pdf:
-                    filename = f"Invoice_{row.get('Sub_Ref_No', '')}.pdf"
-                    try:
-                        pdf_bytes = pdf.output(dest='S').encode('latin1')
-                        zip_file.writestr(filename, pdf_bytes)
-                        success_count += 1
-                    except:
-                        continue
-        
-        # Clean up logo temp files
-        if logo and 'temp_dir' in logo:
-            try:
-                os.remove(logo['path'])
-                os.rmdir(logo['temp_dir'])
-            except:
-                pass
-        
-        if success_count > 0:
-            zip_buffer.seek(0)
-            st.success(f"✅ Generated {success_count} invoices successfully!")
-            st.download_button(
-                label="📥 Download Invoices",
-                data=zip_buffer,
-                file_name="invoices.zip",
-                mime="application/zip"
-            )
-        else:
-            st.error("Failed to generate any invoices")
-            
-    except Exception as e:
-        st.error(f"Processing failed: {str(e)}")
