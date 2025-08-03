@@ -74,35 +74,43 @@ def create_invoice(row, logo):
         pdf.cell(60, 6, "", 0, 0)
         pdf.cell(60, 6, f"Invoice #: {row.get('Invoic', 'N/A')}", 0, 0)
         pdf.cell(0, 6, f"Date: {datetime.now().strftime('%m/%d/%Y')}", 0, 1)
-        pdf.ln(8)
+        pdf.ln(5)
 
-        # 2. Bill To / Ship To section
+        # 2. Three-column Bill To / Ship To / Promo-Sales section
+        col_widths = [70, 70, 50]  # Adjusted widths for three columns
+        
+        # Header row with gray background
         pdf.set_fill_color(230, 230, 230)
         pdf.set_font('Arial', 'B', base_font_size)
-        pdf.cell(95, 6, "Bill To", 0, 0, 'L', fill=True)
-        pdf.cell(95, 6, "Ship To", 0, 1, 'L', fill=True)
+        pdf.cell(col_widths[0], 8, "Bill To", 1, 0, 'L', fill=True)
+        pdf.cell(col_widths[1], 8, "Ship To", 1, 0, 'L', fill=True)
+        pdf.cell(col_widths[2], 8, "", 1, 1, 'L', fill=True)
         
+        # Content rows
         pdf.set_font('Arial', '', base_font_size)
-        fields = [
-            ('Bill_To_Contact_name', 'Ship_To_Contact_name'),
-            ('Bill_to_Company', 'Ship_to_Company'),
-            ('Bill_to_St_Address', 'Ship_to_St_Address'),
-            ('', '')
-        ]
         
-        for bill_field, ship_field in fields:
-            if bill_field:
-                bill_value = str(row.get(bill_field, ''))
-                ship_value = str(row.get(ship_field, ''))
-            else:
-                bill_value = f"{row.get('Bill_to_City', '')} {row.get('Bill_to_State', '')} {row.get('Bill_to_Zip', '')}"
-                ship_value = f"{row.get('Ship_to_City', '')} {row.get('Ship_to_State', '')} {row.get('Ship_to_Zip', '')}"
-            
-            pdf.cell(95, 5, bill_value, 0, 0, 'L')
-            pdf.cell(95, 5, ship_value, 0, 1, 'L')
+        # First row: Contact names and Promo code
+        pdf.cell(col_widths[0], 6, str(row.get('Bill_To_Contact_name', '')), 1, 0, 'L')
+        pdf.cell(col_widths[1], 6, str(row.get('Ship_To_Contact_name', '')), 1, 0, 'L')
+        pdf.cell(col_widths[2], 6, f"PROMO: {row.get('Curr_Promo_Code', '')}", 1, 1, 'L')
         
-        pdf.cell(95, 5, f"PROMO: {row.get('Curr_Promo_Code', '')}", 0, 0, 'L')
-        pdf.cell(95, 5, f"SALES: {row.get('SalesCode', '')}", 0, 1, 'L')
+        # Second row: Companies and Sales code
+        pdf.cell(col_widths[0], 6, str(row.get('Bill_to_Company', '')), 1, 0, 'L')
+        pdf.cell(col_widths[1], 6, str(row.get('Ship_to_Company', '')), 1, 0, 'L')
+        pdf.cell(col_widths[2], 6, f"SALES: {row.get('SalesCode', '')}", 1, 1, 'L')
+        
+        # Third row: Street addresses
+        pdf.cell(col_widths[0], 6, str(row.get('Bill_to_St_Address', '')), 1, 0, 'L')
+        pdf.cell(col_widths[1], 6, str(row.get('Ship_to_St_Address', '')), 1, 0, 'L')
+        pdf.cell(col_widths[2], 6, "", 1, 1, 'L')
+        
+        # Fourth row: City/State/Zip
+        bill_csz = f"{row.get('Bill_to_City', '')} {row.get('Bill_to_State', '')} {row.get('Bill_to_Zip', '')}"
+        ship_csz = f"{row.get('Ship_to_City', '')} {row.get('Ship_to_State', '')} {row.get('Ship_to_Zip', '')}"
+        pdf.cell(col_widths[0], 6, bill_csz, 1, 0, 'L')
+        pdf.cell(col_widths[1], 6, ship_csz, 1, 0, 'L')
+        pdf.cell(col_widths[2], 6, "", 1, 1, 'L')
+        
         pdf.ln(8)
 
         # 3. Six-column account info table
